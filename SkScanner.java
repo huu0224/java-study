@@ -9,7 +9,7 @@ class SkScanner {
         return scanner.nextInt();
     }
 
-    // 정수 입력 + 프롬프트
+    // 프롬프트 + 정수 입력
     public static int getIntWithPrompt(String prompt) {
         System.out.print(prompt);
         return scanner.nextInt();
@@ -20,16 +20,20 @@ class SkScanner {
         return scanner.nextDouble();
     }
 
-    // 문자열 입력
-    public static String getString() {
-        scanner.nextLine(); // 버퍼 정리
-        return scanner.nextLine();
+    // 프롬프트 + 실수 입력
+    public static double getDoubleWithPrompt(String prompt) {
+        System.out.print(prompt);
+        return scanner.nextDouble();
     }
 
-    // 문자열 입력 + 프롬프트
+    // 문자열 입력
+    public static String getString() {
+        return scanner.next();
+    }
+
+    // 프롬프트 + 문자열 입력
     public static String getString(String prompt) {
         System.out.print(prompt);
-        scanner.nextLine(); // 버퍼 정리
-        return scanner.nextLine();
+        return scanner.next();
     }
 }
