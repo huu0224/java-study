@@ -1,76 +1,92 @@
  import java.util.*;
 
 class Solution {
-    int[] parent;
-    int[] size;
-
-    // Union-Find: 루트 노드 찾기
-    public int find(int i) {
-        if (parent[i] == i) return i;
-        return parent[i] = find(parent[i]);
-    }
-
-    // Union-Find: 두 집합 합치기
-    public void union(int i, int j) {
-        int rootI = find(i);
-        int rootJ = find(j);
-        if (rootI != rootJ) {
-            parent[rootI] = rootJ;
-            size[rootJ] += size[rootI];
+    
+    class Triangle {
+        
+        public int x;
+        public int y;
+        public int state; // 0 : |\ |/, 1 : \| /|
+        
+        public Triangle(int x, int y, int state) {
+            this.x = x;
+            this.y = y;
+            this.state = state;
         }
+        
     }
-
+    
+    private int N, M;
+    private int[][][] group;
+    private int[] dx = {-1,1,0,0};
+    private int[] dy = {0,0,-1,1};
+    private int[][] dir = {{1,2},{0,2},{0,3},{1,3}}; // 현재 삼각형이 |\ |/ \| /| 일때 이동 가능 방향
+    private int[][] updownState = {{1,0},{0,1},{0,1},{1,0}}; // 현재 삼각형이 |\ |/ \| /| 일때 위 또는 아래 삼각형의 state
+    
     public int solution(int[][] grid) {
-        int n = grid.length;
-        int m = grid[0].length;
-        
-        // 각 칸을 2개의 삼각형 노드로 분리 (총 2 * n * m 개)
-        // 칸 (r, c)의 두 삼각형 인덱스: (r * m + c) * 2 와 (r * m + c) * 2 + 1
-        int totalNodes = n * m * 2;
-        parent = new int[totalNodes];
-        size = new int[totalNodes];
-        
-        for (int i = 0; i < totalNodes; i++) {
-            parent[i] = i;
-            size[i] = 1;
-        }
-
-        for (int r = 0; r < n; r++) {
-            for (int c = 0; c < m; c++) {
-                int currentIdx = (r * m + c) * 2;
-                
-                // 1. 상하 연결 확인
-                if (r < n - 1) {
-                    // 현재 칸의 아래쪽 삼각형과 아래 칸의 위쪽 삼각형 연결
-                    // grid[r][c]가 1(/)이면 아래쪽은 1번 영역, -1(\)이면 아래쪽은 1번 영역 (둘 다 1번이 아래를 포함하도록 설계 가능)
-                    // 여기서는 편의상 0번을 '위 또는 왼쪽', 1번을 '아래 또는 오른쪽'으로 정의
-                    int bottomOfCurrent = currentIdx + 1;
-                    int topOfBelow = ((r + 1) * m + c) * 2;
-                    union(bottomOfCurrent, topOfBelow);
-                }
-
-                // 2. 좌우 연결 확인
-                if (c < m - 1) {
-                    // 현재 칸의 오른쪽 삼각형과 오른쪽 칸의 왼쪽 삼각형 연결
-                    int rightOfCurrent = currentIdx + 1;
-                    int leftOfNext = (r * m + (c + 1)) * 2;
-                    union(rightOfCurrent, leftOfNext);
-                }
-            }
-        }
-
-        // 각 컴포넌트(덩어리)는 이분 그래프 형태를 띱니다.
-        // 문제에서 요구하는 '최대 덩어리'는 결국 연결된 그래프에서 
-        // 한 칸당 하나씩 골랐을 때 나올 수 있는 최대 크기입니다.
-        // 이 구조상 연결된 하나의 덩어리는 항상 한 칸에서 하나의 삼각형만 선택하며 확장 가능합니다.
+        init(grid);
         
         int answer = 0;
-        for (int i = 0; i < totalNodes; i++) {
-            if (parent[i] == i) {
-                answer = Math.max(answer, size[i]);
+        int groupNum = 1;
+        for (int i=0; i<N; i++) {
+            for (int j=0; j<M; j++) {
+                for (int k=0; k<2; k++) {
+                    if (group[i][j][k] == 0) {
+                        answer = Math.max(answer, bfs(i, j, k, groupNum, grid));
+                        groupNum++;
+                    }
+                }
             }
         }
-
+        
         return answer;
     }
+    
+    public void init(int[][] grid) {
+        N = grid.length;
+        M = grid[0].length;
+        group = new int[N][M][2];
+    }
+    
+    public int bfs(int x, int y, int state, int groupNum, int[][] grid) {
+        Queue<Triangle> q = new LinkedList<>();
+        q.offer(new Triangle(x, y, state));
+        group[x][y][state] = groupNum;
+        
+        int size = 0;
+        while (!q.isEmpty()) {
+            Triangle cur = q.peek();
+            q.poll();
+            size++;
+            
+            int shape; // 현재 삼각형 모양 0 : |\, 1 : |/, 2 : \|, 3 : /|
+            if (grid[cur.x][cur.y] == -1) shape = cur.state == 0 ? 0 : 2;  
+            else shape = cur.state == 0 ? 1 : 3;  
+            
+            for (int i=0; i<2; i++) {
+                int nd = dir[shape][i]; // 다음 방향
+                int nx = cur.x + dx[nd];
+                int ny = cur.y + dy[nd];
+
+                if (!isValid(nx, ny)) continue; // 격자 밖일 경우
+                if (group[nx][ny][0] == groupNum || group[nx][ny][1] == groupNum) continue; // 이미 방문한 경우
+                
+                int nState; // 다음 삼각형의 state
+                // 위아래일 경우에는 grid[nx][ny]에 따라 state 결정
+                if (nd == 0 || nd == 1) nState = updownState[shape][grid[nx][ny] == -1 ? 0 : 1]; 
+                else nState = nd == 2 ? 1 : 0; // 왼쪽일 경우 1, 오른쪽일 경우 0
+
+                group[nx][ny][nState] = groupNum; // 현재 그룹에 포함시키기
+                q.offer(new Triangle(nx, ny, nState));
+            }
+        }
+        
+        return size;
+    }
+    
+    // 좌표가 격자 내부인지 판별하는 메소드
+    public boolean isValid(int x, int y) {
+        return x >= 0 && x < N && y >= 0 && y < M;
+    }
+    
 }
