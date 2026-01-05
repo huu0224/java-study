@@ -1,0 +1,58 @@
+import java.util.*;
+
+class Solution {
+    public int solution(int[][] points, int[][] routes) {
+        // 시간(Integer)별로 해당 위치(String: "r,c")에 있는 로봇의 수를 저장하는 맵
+        Map<Integer, Map<String, Integer>> timePosMap = new HashMap<>();
+
+        for (int i = 0; i < routes.length; i++) {
+            int time = 0;
+            int[] route = routes[i];
+            
+            // 첫 번째 포인트 설정 (0초 시점의 위치 기록)
+            int currR = points[route[0] - 1][0];
+            int currC = points[route[0] - 1][1];
+            recordPosition(timePosMap, time++, currR, currC);
+
+            // 지정된 경로의 포인트들을 순차적으로 방문
+            for (int j = 1; j < route.length; j++) {
+                int targetR = points[route[j] - 1][0];
+                int targetC = points[route[j] - 1][1];
+
+                // 1. r 좌표를 먼저 목표치로 이동
+                while (currR != targetR) {
+                    if (currR < targetR) currR++;
+                    else currR--;
+                    recordPosition(timePosMap, time++, currR, currC);
+                }
+
+                // 2. 그 다음 c 좌표를 목표치로 이동
+                while (currC != targetC) {
+                    if (currC < targetC) currC++;
+                    else currC--;
+                    recordPosition(timePosMap, time++, currR, currC);
+                }
+            }
+        }
+
+        // 위험 상황(충돌 위험) 횟수 계산
+        int dangerCount = 0;
+        for (Map<String, Integer> posMapAtTime : timePosMap.values()) {
+            for (int count : posMapAtTime.values()) {
+                if (count >= 2) {
+                    dangerCount++;
+                }
+            }
+        }
+
+        return dangerCount;
+    }
+
+    // 특정 시간과 좌표에 로봇의 존재를 기록하는 보조 메서드
+    private void recordPosition(Map<Integer, Map<String, Integer>> map, int time, int r, int c) {
+        String posKey = r + "," + c;
+        map.putIfAbsent(time, new HashMap<>());
+        Map<String, Integer> posMap = map.get(time);
+        posMap.put(posKey, posMap.getOrDefault(posKey, 0) + 1);
+    }
+}
