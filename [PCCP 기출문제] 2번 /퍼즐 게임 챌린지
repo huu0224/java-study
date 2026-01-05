@@ -1,0 +1,47 @@
+class Solution {
+    public int solution(int[] diffs, int[] times, long limit) {
+        // 숙련도의 최소 범위는 1, 최대 범위는 난이도 중 가장 큰 값으로 설정합니다.
+        int low = 1;
+        int high = 100000; 
+        int answer = high;
+
+        while (low <= high) {
+            int mid = low + (high - low) / 2;
+            
+            // mid 숙련도로 퍼즐을 다 풀 수 있는지 확인합니다.
+            if (canSolve(diffs, times, limit, mid)) {
+                // 시간 내 해결 가능하면 숙련도를 더 낮춰봅니다.
+                answer = mid;
+                high = mid - 1;
+            } else {
+                // 시간 초과면 숙련도를 높여야 합니다.
+                low = mid + 1;
+            }
+        }
+
+        return answer;
+    }
+
+    private boolean canSolve(int[] diffs, int[] times, long limit, int level) {
+        long totalTime = 0;
+
+        for (int i = 0; i < diffs.length; i++) {
+            if (diffs[i] <= level) {
+                // 숙련도가 충분할 경우: 소요 시간만 더함.
+                totalTime += times[i];
+            } else {
+                // 숙련도가 부족할 경우: (이전 시간 + 현재 시간) * 틀린 횟수 + 현재 시간.
+                int mistakes = diffs[i] - level;
+                long timePrev = (i > 0) ? times[i - 1] : 0;
+                totalTime += (long)(timePrev + times[i]) * mistakes + times[i];
+            }
+
+            // 계산 도중 이미 제한 시간을 초과하면 조기 종료 (효율성).
+            if (totalTime > limit) {
+                return false;
+            }
+        }
+
+        return totalTime <= limit;
+    }
+}
