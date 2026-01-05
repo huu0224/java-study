@@ -1,0 +1,44 @@
+class Solution {
+    public int solution(int[] schedules, int[][] timelogs, int startday) {
+        int answer = 0;
+
+        for (int i = 0; i < schedules.length; i++) {
+            // 1. 해당 직원의 출근 인정 시각 계산 (희망 시각 + 10분)
+            int wishTime = schedules[i];
+            int hour = wishTime / 100;
+            int minute = wishTime % 100;
+
+            minute += 10;
+            if (minute >= 60) { // 60분을 넘어가면 시간(hour)을 올림
+                hour++;
+                minute -= 60;
+            }
+            int limitTime = hour * 100 + minute;
+
+            // 2. 일주일(7일)간의 출근 기록 확인
+            boolean isEligible = true;
+            for (int j = 0; j < 7; j++) {
+                // 현재 체크하는 날의 요일 계산 (1:월, 2:화, ..., 6:토, 7:일)
+                int currentDay = (startday + j - 1) % 7 + 1;
+
+                // 토요일(6)과 일요일(7)은 이벤트에 영향을 주지 않으므로 제외
+                if (currentDay >= 6) {
+                    continue;
+                }
+
+                // 평일인데 출근 인정 시각을 초과해서 출근했다면 탈락
+                if (timelogs[i][j] > limitTime) {
+                    isEligible = false;
+                    break;
+                }
+            }
+
+            // 모든 평일 출근 시각을 지켰다면 상품 대상자 추가
+            if (isEligible) {
+                answer++;
+            }
+        }
+
+        return answer;
+    }
+}
