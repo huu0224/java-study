@@ -1,0 +1,72 @@
+import java.util.*;
+
+class Solution {
+    public String[] solution(String[] expressions) {
+        List<String[]> complete = new ArrayList<>();
+        List<String[]> incomplete = new ArrayList<>();
+        int minBase = 2;
+
+        // 1. 최소 진법 파악 및 수식 분류
+        for (String expr : expressions) {
+            String[] parts = expr.split(" ");
+            // 각 숫자(A, B, C)의 자릿수를 확인하여 최소 진법 결정
+            minBase = Math.max(minBase, getMinBaseForString(parts[0]));
+            minBase = Math.max(minBase, getMinBaseForString(parts[2]));
+            
+            if (!parts[4].equals("X")) {
+                minBase = Math.max(minBase, getMinBaseForString(parts[4]));
+                complete.add(parts);
+            } else {
+                incomplete.add(parts);
+            }
+        }
+
+        // 2. 가능한 진법(2~9) 후보군 찾기
+        List<Integer> possibleBases = new ArrayList<>();
+        for (int b = minBase; b <= 9; b++) {
+            boolean isValid = true;
+            for (String[] p : complete) {
+                int v1 = Integer.parseInt(p[0], b);
+                int v2 = Integer.parseInt(p[2], b);
+                int expected = Integer.parseInt(p[4], b);
+                
+                if (p[1].equals("+")) {
+                    if (v1 + v2 != expected) { isValid = false; break; }
+                } else {
+                    if (v1 - v2 != expected) { isValid = false; break; }
+                }
+            }
+            if (isValid) possibleBases.add(b);
+        }
+
+        // 3. 'X' 수식 복원
+        String[] answer = new String[incomplete.size()];
+        for (int i = 0; i < incomplete.size(); i++) {
+            String[] p = incomplete.get(i);
+            Set<String> results = new HashSet<>();
+
+            for (int b : possibleBases) {
+                int v1 = Integer.parseInt(p[0], b);
+                int v2 = Integer.parseInt(p[2], b);
+                int calc = p[1].equals("+") ? v1 + v2 : v1 - v2;
+                results.add(Integer.toString(calc, b));
+            }
+
+            String finalRes = (results.size() == 1) ? results.iterator().next() : "?";
+            answer[i] = p[0] + " " + p[1] + " " + p[2] + " = " + finalRes;
+        }
+
+        return answer;
+    }
+
+    // 숫자의 각 자릿수를 확인해 가능한 최소 진법을 구하는 헬퍼 함수
+    private int getMinBaseForString(String s) {
+        int maxDigit = 0;
+        for (char c : s.toCharArray()) {
+            if (Character.isDigit(c)) {
+                maxDigit = Math.max(maxDigit, c - '0');
+            }
+        }
+        return maxDigit + 1;
+    }
+}
