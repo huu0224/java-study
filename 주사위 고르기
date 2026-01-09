@@ -1,0 +1,93 @@
+import java.util.*;
+
+class Solution {
+    int n;
+    List<int[]> combinations = new ArrayList<>();
+    int[] selected;
+
+    public int[] solution(int[][] dice) {
+        n = dice.length;
+        selected = new int[n / 2];
+        
+        // 1. 주사위 n/2개를 뽑는 조합 구하기
+        makeCombination(0, 0);
+
+        int maxWins = -1;
+        int[] answer = new int[n / 2];
+
+        for (int[] aIndices : combinations) {
+            // A가 선택하지 않은 주사위(B의 주사위) 인덱스 구하기
+            int[] bIndices = new int[n / 2];
+            boolean[] isSelected = new boolean[n];
+            for (int idx : aIndices) isSelected[idx] = true;
+            
+            int bIdx = 0;
+            for (int i = 0; i < n; i++) {
+                if (!isSelected[i]) bIndices[bIdx++] = i;
+            }
+
+            // 2. A와 B가 만들 수 있는 모든 합의 경우의 수 구하기
+            List<Integer> aSums = new ArrayList<>();
+            List<Integer> bSums = new ArrayList<>();
+            getSums(0, 0, aIndices, dice, aSums);
+            getSums(0, 0, bIndices, dice, bSums);
+
+            // 3. 이분 탐색을 위해 B의 합계 리스트 정렬
+            Collections.sort(bSums);
+
+            int totalWins = 0;
+            for (int aSum : aSums) {
+                // aSum보다 작은 bSum의 개수를 이분 탐색으로 찾음
+                totalWins += countWins(bSums, aSum);
+            }
+
+            // 4. 최대 승수 갱신
+            if (totalWins > maxWins) {
+                maxWins = totalWins;
+                for (int i = 0; i < aIndices.length; i++) {
+                    answer[i] = aIndices[i] + 1; // 1번 주사위부터 시작하므로 +1
+                }
+            }
+        }
+
+        return answer;
+    }
+
+    // 조합 생성 함수
+    private void makeCombination(int start, int depth) {
+        if (depth == n / 2) {
+            combinations.add(selected.clone());
+            return;
+        }
+        for (int i = start; i < n; i++) {
+            selected[depth] = i;
+            makeCombination(i + 1, depth + 1);
+        }
+    }
+
+    // 주사위 합의 모든 경우의 수 생성 (DFS)
+    private void getSums(int depth, int currentSum, int[] indices, int[][] dice, List<Integer> sums) {
+        if (depth == n / 2) {
+            sums.add(currentSum);
+            return;
+        }
+        for (int faceScore : dice[indices[depth]]) {
+            getSums(depth + 1, currentSum + faceScore, indices, dice, sums);
+        }
+    }
+
+    // 이분 탐색을 통해 aSum보다 작은 값의 개수 반환 (Lower Bound 개념)
+    private int countWins(List<Integer> bSums, int target) {
+        int left = 0;
+        int right = bSums.size();
+        while (left < right) {
+            int mid = (left + right) / 2;
+            if (bSums.get(mid) < target) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        return left;
+    }
+}
