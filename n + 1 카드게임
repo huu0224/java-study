@@ -1,0 +1,61 @@
+import java.util.*;
+
+class Solution {
+    private int target;
+    private Set<Integer> myHand = new HashSet<>();
+    private Set<Integer> drawPool = new HashSet<>();
+
+    public int solution(int coin, int[] cards) {
+        int n = cards.length; //
+        target = n + 1; //
+        int initialCount = n / 3; //
+        int cardIdx = 0;
+
+        // 1. 초기 카드 뭉치 구성 (n/3장)
+        for (int i = 0; i < initialCount; i++) {
+            myHand.add(cards[cardIdx++]);
+        }
+
+        int currentRound = 1;
+
+        // 2. 라운드 진행
+        while (cardIdx < n) {
+            // 이번 라운드 카드 2장 뽑기
+            drawPool.add(cards[cardIdx++]);
+            drawPool.add(cards[cardIdx++]);
+
+            // 우선순위 1: 내 손안의 카드들로만 해결 (0코인 소모)
+            if (canMakeTarget(myHand, myHand)) {
+                currentRound++;
+            } 
+            // 우선순위 2: 내 손의 카드 1장 + 뽑은 카드 1장 (1코인 소모)
+            else if (coin >= 1 && canMakeTarget(myHand, drawPool)) {
+                coin -= 1;
+                currentRound++;
+            } 
+            // 우선순위 3: 뽑은 카드들 중에서 2장 (2코인 소모)
+            else if (coin >= 2 && canMakeTarget(drawPool, drawPool)) {
+                coin -= 2;
+                currentRound++;
+            } 
+            // 어떤 방법으로도 다음 라운드로 갈 수 없음
+            else {
+                break;
+            }
+        }
+
+        return currentRound; //
+    }
+
+    // 두 셋(Set) 사이에서 합이 target이 되는 쌍을 찾아 제거하는 헬퍼 함수
+    private boolean canMakeTarget(Set<Integer> set1, Set<Integer> set2) {
+        for (int num : set1) {
+            if (set2.contains(target - num)) {
+                set1.remove(num);
+                set2.remove(target - num);
+                return true;
+            }
+        }
+        return false;
+    }
+}
