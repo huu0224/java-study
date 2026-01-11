@@ -1,0 +1,96 @@
+class Solution {
+    int n, m;
+    int[] rStart, bStart, rEnd, bEnd;
+    boolean[][] rVisited, bVisited;
+    int[] dy = {-1, 1, 0, 0};
+    int[] dx = {0, 0, -1, 1};
+    int answer = Integer.MAX_VALUE;
+
+    public int solution(int[][] maze) {
+        n = maze.length;
+        m = maze[0].length;
+        rVisited = new boolean[n][m];
+        bVisited = new boolean[n][m];
+
+        // 1. 시작 및 도착 지점 찾기
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                if (maze[i][j] == 1) rStart = new int[]{i, j};
+                else if (maze[i][j] == 2) bStart = new int[]{i, j};
+                else if (maze[i][j] == 3) rEnd = new int[]{i, j};
+                else if (maze[i][j] == 4) bEnd = new int[]{i, j};
+            }
+        }
+
+        // 초기 위치 방문 처리
+        rVisited[rStart[0]][rStart[1]] = true;
+        bVisited[bStart[0]][bStart[1]] = true;
+
+        backtrack(rStart[0], rStart[1], bStart[0], bStart[1], 0, maze);
+
+        return answer == Integer.MAX_VALUE ? 0 : answer; // 풀 수 없으면 0 반환
+    }
+
+    private void backtrack(int ry, int rx, int by, int bx, int turns, int[][] maze) {
+        // 두 수레가 모두 도착지에 도달한 경우
+        boolean rDone = (ry == rEnd[0] && rx == rEnd[1]);
+        boolean bDone = (by == bEnd[0] && bx == bEnd[1]);
+
+        if (rDone && bDone) {
+            answer = Math.min(answer, turns);
+            return;
+        }
+
+        // 빨간 수레 이동 후보 구하기
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                int nry = ry, nrx = rx;
+                int nby = by, nbx = bx;
+
+                // 도착하지 않은 수레만 이동
+                if (!rDone) {
+                    nry += dy[i];
+                    nrx += dx[i];
+                }
+                if (!bDone) {
+                    nby += dy[j];
+                    nbx += dx[j];
+                }
+
+                if (isValid(nry, nrx, nby, nbx, ry, rx, by, bx, maze, rDone, bDone)) {
+                    // 방문 처리
+                    if (!rDone) rVisited[nry][nrx] = true;
+                    if (!bDone) bVisited[nby][nbx] = true;
+
+                    backtrack(nry, nrx, nby, nbx, turns + 1, maze);
+
+                    // 백트래킹 (원상 복구)
+                    if (!rDone) rVisited[nry][nrx] = false;
+                    if (!bDone) bVisited[nby][nbx] = false;
+                }
+                
+                // 이미 도착한 수레는 방향 전환이 의미 없으므로 한 번만 수행
+                if (bDone) break; 
+            }
+            if (rDone) break;
+        }
+    }
+
+    private boolean isValid(int nry, int nrx, int nby, int nbx, int ry, int rx, int by, int bx, int[][] maze, boolean rDone, boolean bDone) {
+        // 1. 범위 및 벽 체크
+        if (nry < 0 || nry >= n || nrx < 0 || nrx >= m || maze[nry][nrx] == 5) return false;
+        if (nby < 0 || nby >= n || nbx < 0 || nbx >= m || maze[nby][nbx] == 5) return false;
+
+        // 2. 이미 방문한 칸 체크 (도착하지 않은 경우에만)
+        if (!rDone && rVisited[nry][nrx]) return false;
+        if (!bDone && bVisited[nby][nbx]) return false;
+
+        // 3. 동시에 같은 칸 위치 불가
+        if (nry == nby && nrx == nbx) return false;
+
+        // 4. 서로 자리 바꾸기 불가
+        if (nry == by && nrx == bx && nby == ry && nbx == rx) return false;
+
+        return true;
+    }
+}
